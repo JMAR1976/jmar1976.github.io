@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tech News</title>
+
+<style>
+body {
+  font-family: Arial;
+  margin: 0;
+  background: #0f172a;
+  color: white;
+}
+header {
+  background: #020617;
+  padding: 20px;
+  text-align: center;
+}
+.container {
+  max-width: 1000px;
+  margin: auto;
+  padding: 20px;
+}
+.card {
+  background: #1e293b;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+}
+a { color: #38bdf8; }
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🌐 Tech News</h1>
+<button onclick="loadNews()">Atualizar</button>
+</header>
+
+<div class="container" id="news"></div>
+
+<script>
+async function loadNews() {
+  const res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/");
+  const data = await res.json();
+
+  const news = data.results;
+  const container = document.getElementById("news");
+  container.innerHTML = "";
+
+  news.forEach(n => {
+    container.innerHTML += `
+      <div class="card">
+        <h3>${n.title}</h3>
+        <p>${n.summary}</p>
+        <a href="${n.url}" target="_blank">Ler mais</a>
+      </div>
+    `;
+  });
+}
+
+loadNews();
+</script>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tech News Pro AI</title>
+<title>Portal Ciência & Tecnologia</title>
 
 <style>
 :root {
@@ -11,59 +11,50 @@
   --card: #1e293b;
   --text: white;
 }
-
 body.light {
   --bg: #f1f5f9;
   --card: #ffffff;
   --text: #0f172a;
 }
-
 body {
   margin: 0;
   font-family: Arial;
   background: var(--bg);
   color: var(--text);
 }
-
 header {
   padding: 20px;
   text-align: center;
   background: #020617;
 }
-
 .container {
   max-width: 1200px;
   margin: auto;
   padding: 20px;
 }
-
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px,1fr));
   gap: 20px;
 }
-
 .card {
   background: var(--card);
   padding: 15px;
   border-radius: 10px;
 }
-
-input {
-  padding: 10px;
-  width: 100%;
-  margin-bottom: 10px;
-}
-
 button {
   padding: 10px;
   margin: 5px;
   cursor: pointer;
 }
-
 img {
   width: 100%;
   border-radius: 10px;
+}
+#search {
+  padding: 10px;
+  width: 80%;
+  margin: 15px;
 }
 </style>
 </head>
@@ -71,101 +62,77 @@ img {
 <body>
 
 <header>
-<h1 id="title">🌐 Tech News</h1>
+<h1>🌐 Portal Ciência & Tecnologia</h1>
+<p id="updateDate"></p>
 
-<button onclick="toggleLanguage()">🌍 PT / EN</button>
-<button onclick="toggleTheme()" id="themeBtn">Tema</button>
-<button onclick="topNews()" id="topBtn">Top Notícias</button>
-<button onclick="showFavorites()" id="favBtn">Favoritos</button>
+<input type="text" id="search" placeholder="Pesquisar notícias..." onkeyup="filterNews()"><br>
+
+<button onclick="loadCategory('technology')">💻 Tecnologia</button>
+<button onclick="loadCategory('ai')">🤖 IA</button>
+<button onclick="loadCategory('quantum')">⚛️ Quantum</button>
+<button onclick="loadCategory('medicine')">🧬 Medicina</button>
+<button onclick="loadCategory('science')">🔬 Ciência</button>
+<button onclick="loadCategory('space')">🚀 Espaço</button>
+<button onclick="loadCategory('robotics')">🤖 Robótica</button>
+<button onclick="loadCategory('energy')">🔋 Energia</button>
+<button onclick="loadCategory('biotech')">🧪 Biotecnologia</button>
+<button onclick="loadCategory('physics')">🔬 Física</button>
+<button onclick="loadCategory('future')">🌍 Futuro</button>
+
+<br>
+<button onclick="toggleTheme()">🌙 Tema</button>
+<button onclick="showFavorites()">⭐ Favoritos</button>
 </header>
 
 <div class="container">
-
-<input type="text" id="search" placeholder="Pesquisar notícias..." onkeyup="filterNews()">
-
-<h2 id="trendTitle">Tendências</h2>
-<div id="trends"></div>
-
 <div class="grid" id="news"></div>
 
-<h2 id="savedTitle">Notícias Guardadas</h2>
+<h2>⭐ Notícias Guardadas</h2>
 <div class="grid" id="favNews"></div>
-
 </div>
 
 <script>
 let articles = [];
-let currentLang = "pt";
 
-// TRADUÇÕES
-const translations = {
-  pt: {
-    title: "🌐 Notícias de Tecnologia",
-    theme: "Tema",
-    top: "Top Notícias",
-    fav: "Favoritos",
-    trends: "Tendências",
-    saved: "Notícias Guardadas",
-    search: "Pesquisar notícias...",
-    read: "Ler mais",
-    save: "Guardar",
-    listen: "Ouvir",
-    summary: "Resumo IA"
-  },
-  en: {
-    title: "🌐 Tech News",
-    theme: "Theme",
-    top: "Top News",
-    fav: "Favorites",
-    trends: "Trends",
-    saved: "Saved News",
-    search: "Search news...",
-    read: "Read more",
-    save: "Save",
-    listen: "Listen",
-    summary: "AI Summary"
-  }
-};
+// CARREGAR CATEGORIAS (FONTES FIDEDIGNAS)
+async function loadCategory(category) {
 
-// TROCAR IDIOMA
-function toggleLanguage() {
-  currentLang = currentLang === "pt" ? "en" : "pt";
-  applyTranslations();
-}
+  let url = "https://api.spaceflightnewsapi.net/v4/articles/";
 
-function applyTranslations() {
-  const t = translations[currentLang];
+  if(category === "quantum") url += "?search=quantum";
+  if(category === "medicine") url += "?search=medicine";
+  if(category === "science") url += "?search=science";
+  if(category === "ai") url += "?search=artificial intelligence";
+  if(category === "space") url += "?search=space";
+  if(category === "robotics") url += "?search=robot";
+  if(category === "energy") url += "?search=energy";
+  if(category === "biotech") url += "?search=biotech";
+  if(category === "physics") url += "?search=physics";
+  if(category === "future") url += "?search=technology";
+  if(category === "technology") url += "?search=technology";
 
-  document.getElementById("title").innerText = t.title;
-  document.getElementById("themeBtn").innerText = t.theme;
-  document.getElementById("topBtn").innerText = t.top;
-  document.getElementById("favBtn").innerText = t.fav;
-  document.getElementById("trendTitle").innerText = t.trends;
-  document.getElementById("savedTitle").innerText = t.saved;
-  document.getElementById("search").placeholder = t.search;
-
-  renderNews(articles);
-}
-
-// CARREGAR NOTÍCIAS
-async function loadNews() {
-  const res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/");
+  const res = await fetch(url);
   const data = await res.json();
 
   articles = data.results.map(a => ({
     title: a.title,
     description: a.summary,
     url: a.url,
-    image: a.image_url
+    image: a.image_url,
+    date: a.published_at
   }));
 
   renderNews(articles);
-  showTrends();
+
+  const today = new Date().toLocaleDateString();
+  document.getElementById("updateDate").innerText =
+    "Última atualização: " + today;
 }
 
 // MOSTRAR NOTÍCIAS
 function renderNews(list) {
-  const t = translations[currentLang];
+  list.sort((a,b) => new Date(b.date) - new Date(a.date));
+
   const container = document.getElementById("news");
   container.innerHTML = "";
 
@@ -177,11 +144,10 @@ function renderNews(list) {
       <img src="${a.image}">
       <h3>${a.title}</h3>
       <p>${a.description}</p>
-      <button onclick="speak('${a.title}')">🔊 ${t.listen}</button>
-      <button onclick="saveFavorite('${a.title}','${a.description}','${a.url}','${a.image}')">⭐ ${t.save}</button>
-      <button onclick="summarize('${a.description}')">🤖 ${t.summary}</button>
+      <button onclick="speak('${a.title}')">🔊 Ouvir</button>
+      <button onclick="saveFavorite('${a.title}','${a.description}','${a.url}','${a.image}')">⭐ Guardar</button>
       <br><br>
-      <a href="${a.url}" target="_blank">${t.read}</a>
+      <a href="${a.url}" target="_blank">Ler mais</a>
     `;
 
     container.appendChild(card);
@@ -195,15 +161,10 @@ function filterNews() {
   renderNews(filtered);
 }
 
-// TEMA
-function toggleTheme() {
-  document.body.classList.toggle("light");
-}
-
 // VOZ
 function speak(text) {
   const speech = new SpeechSynthesisUtterance(text);
-  speech.lang = currentLang === "pt" ? "pt-PT" : "en-US";
+  speech.lang = "pt-PT";
   speechSynthesis.speak(speech);
 }
 
@@ -212,7 +173,7 @@ function saveFavorite(title, desc, url, image) {
   const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
   favs.push({title, desc, url, image});
   localStorage.setItem("favorites", JSON.stringify(favs));
-  alert("Guardado!");
+  alert("Guardado nos favoritos");
 }
 
 function showFavorites() {
@@ -235,43 +196,35 @@ function showFavorites() {
   });
 }
 
-// TENDÊNCIAS
-function showTrends() {
-  const trends = {};
-  articles.forEach(a => {
-    const words = a.title.split(" ");
-    words.forEach(w => {
-      if(w.length > 4) trends[w] = (trends[w] || 0) + 1;
-    });
-  });
-
-  let html = "";
-  Object.keys(trends).slice(0,5).forEach(t => {
-    html += `<p>${t}</p>`;
-  });
-
-  document.getElementById("trends").innerHTML = html;
+// TEMA
+function toggleTheme() {
+  document.body.classList.toggle("light");
 }
 
-// TOP
-function topNews() {
-  const sorted = [...articles].sort(() => Math.random() - 0.5);
-  renderNews(sorted.slice(0,5));
-}
+// ATUALIZA AUTOMATICAMENTE TODOS OS DIAS
+setInterval(() => loadCategory('technology'), 86400000);
 
-// RESUMO IA
-function summarize(text) {
-  alert(text.substring(0,120) + "...");
-}
-
-// AUTO UPDATE
-setInterval(loadNews, 300000);
-
-loadNews();
+// CARREGAR TECNOLOGIA AO INICIAR
+loadCategory('technology');
 </script>
 
 </body>
 </html>
+
+
+
+  
  
+
+ 
+
+
+
+
+
+
+
+
+
 
     

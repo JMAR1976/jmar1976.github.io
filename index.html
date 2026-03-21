@@ -49,7 +49,7 @@ header {
   border-radius: 10px;
 }
 
-input, select {
+input {
   padding: 10px;
   width: 100%;
   margin-bottom: 10px;
@@ -73,11 +73,7 @@ img {
 <header>
 <h1 id="title">🌐 Tech News</h1>
 
-<select onchange="changeLanguage(this.value)">
-  <option value="pt">Português</option>
-  <option value="en">English</option>
-</select>
-
+<button onclick="toggleLanguage()">🌍 PT / EN</button>
 <button onclick="toggleTheme()" id="themeBtn">Tema</button>
 <button onclick="topNews()" id="topBtn">Top Notícias</button>
 <button onclick="showFavorites()" id="favBtn">Favoritos</button>
@@ -104,7 +100,7 @@ let currentLang = "pt";
 // TRADUÇÕES
 const translations = {
   pt: {
-    title: "🌐 Tech News",
+    title: "🌐 Notícias de Tecnologia",
     theme: "Tema",
     top: "Top Notícias",
     fav: "Favoritos",
@@ -131,15 +127,23 @@ const translations = {
   }
 };
 
-function changeLanguage(lang) {
-  currentLang = lang;
-  document.getElementById("title").innerText = translations[lang].title;
-  document.getElementById("themeBtn").innerText = translations[lang].theme;
-  document.getElementById("topBtn").innerText = translations[lang].top;
-  document.getElementById("favBtn").innerText = translations[lang].fav;
-  document.getElementById("trendTitle").innerText = translations[lang].trends;
-  document.getElementById("savedTitle").innerText = translations[lang].saved;
-  document.getElementById("search").placeholder = translations[lang].search;
+// TROCAR IDIOMA
+function toggleLanguage() {
+  currentLang = currentLang === "pt" ? "en" : "pt";
+  applyTranslations();
+}
+
+function applyTranslations() {
+  const t = translations[currentLang];
+
+  document.getElementById("title").innerText = t.title;
+  document.getElementById("themeBtn").innerText = t.theme;
+  document.getElementById("topBtn").innerText = t.top;
+  document.getElementById("favBtn").innerText = t.fav;
+  document.getElementById("trendTitle").innerText = t.trends;
+  document.getElementById("savedTitle").innerText = t.saved;
+  document.getElementById("search").placeholder = t.search;
+
   renderNews(articles);
 }
 
@@ -208,7 +212,7 @@ function saveFavorite(title, desc, url, image) {
   const favs = JSON.parse(localStorage.getItem("favorites") || "[]");
   favs.push({title, desc, url, image});
   localStorage.setItem("favorites", JSON.stringify(favs));
-  alert("Saved!");
+  alert("Guardado!");
 }
 
 function showFavorites() {
@@ -224,7 +228,7 @@ function showFavorites() {
       <img src="${a.image}">
       <h3>${a.title}</h3>
       <p>${a.desc}</p>
-      <a href="${a.url}" target="_blank">Open</a>
+      <a href="${a.url}" target="_blank">Abrir</a>
     `;
 
     container.appendChild(card);
@@ -255,7 +259,7 @@ function topNews() {
   renderNews(sorted.slice(0,5));
 }
 
-// RESUMO
+// RESUMO IA
 function summarize(text) {
   alert(text.substring(0,120) + "...");
 }
@@ -268,6 +272,6 @@ loadNews();
 
 </body>
 </html>
-
+ 
 
     

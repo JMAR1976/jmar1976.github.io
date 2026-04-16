@@ -1,4 +1,4 @@
-```html id="9g7h2m"
+```html id="7pw3ka"
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -7,6 +7,7 @@
 <meta name="google-site-verification" content="VmGN_6lB30wphsQ4v-vTdsv3Wyax4XMeylYzYD5EHHQ" />
 <title>Notícias Mais Pesquisadas</title>
 
+<!-- Google AdSense Auto Ads -->
 <script async
 src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5386266174463642"
 crossorigin="anonymous"></script>
@@ -114,19 +115,19 @@ async function updateVisitorCount(){
 
 updateVisitorCount();
 
-let lang="pt";
+let lang = "pt";
 
 function toggleLanguage(){
-  lang = lang==="pt" ? "en" : "pt";
+  lang = lang === "pt" ? "en" : "pt";
   loadAllNews();
 
   document.getElementById("title").innerText =
-    lang==="pt"
+    lang === "pt"
       ? "🌐 Notícias Mais Pesquisadas no Mundo"
       : "🌐 Most Searched News in the World";
 
   document.getElementById("visitorText").innerText =
-    lang==="pt" ? "Visitantes:" : "Visitors:";
+    lang === "pt" ? "Visitantes:" : "Visitors:";
 }
 
 function toggleTheme(){
@@ -134,48 +135,78 @@ function toggleTheme(){
 }
 
 async function loadAllNews(){
-  const container=document.getElementById("newsContainer");
-  container.innerHTML="";
+  const container = document.getElementById("newsContainer");
+  container.innerHTML = "";
 
   for(const topic of topics){
     try{
       const res = await fetch(
-        "https://api.spaceflightnewsapi.net/v4/articles/?search="+encodeURIComponent(topic.search)
+        "https://api.spaceflightnewsapi.net/v4/articles/?search=" +
+        encodeURIComponent(topic.search)
       );
 
       const data = await res.json();
 
-      let section=`<h2>${lang==="pt"?topic.pt:topic.en}</h2><div class="grid">`;
+      let section = `
+        <h2>${lang === "pt" ? topic.pt : topic.en}</h2>
+        <div class="grid">
+      `;
 
-      data.results.slice(0,4).forEach(a=>{
+      data.results.slice(0, 2).forEach(a => {
+        const resumo = a.summary
+          ? a.summary.substring(0, 180) + "..."
+          : "";
+
         section += `
-        <div class="card">
-          <img src="${a.image_url}" alt="${a.title}" loading="lazy" onerror="this.style.display='none'">
-          <h3>${a.title}</h3>
-          <p>${a.summary}</p>
-          <a href="${a.url}" target="_blank" rel="noopener noreferrer">Read more</a>
-        </div>`;
+          <div class="card">
+            <img src="${a.image_url || ''}"
+                 alt="${a.title}"
+                 loading="lazy"
+                 onerror="this.style.display='none'">
+
+            <h3>${a.title}</h3>
+            <p>${resumo}</p>
+
+            <a href="${a.url}" target="_blank" rel="noopener noreferrer">
+              Read more
+            </a>
+          </div>
+        `;
       });
 
       section += "</div>";
       container.innerHTML += section;
 
     }catch(err){
-      console.error(err);
+      console.error("Erro ao carregar notícias:", err);
     }
   }
 
   document.getElementById("updateDate").innerText =
-    (lang==="pt"?"Atualizado: ":"Updated: ")+new Date().toLocaleDateString();
+    (lang === "pt" ? "Atualizado: " : "Updated: ") +
+    new Date().toLocaleDateString();
 }
 
 loadAllNews();
-setInterval(loadAllNews,86400000);
+setInterval(loadAllNews, 86400000);
 </script>
 
 </body>
 </html>
 ```
+
+
+
+
+
+
+
+
+
+
+   
+
+
 
 
 

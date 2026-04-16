@@ -15,11 +15,11 @@ crossorigin="anonymous"></script>
 :root{
   --bg:#0f172a;
   --card:#1e293b;
-  --text:#fff;
+  --text:#ffffff;
 }
 body.light{
   --bg:#f1f5f9;
-  --card:#fff;
+  --card:#ffffff;
   --text:#0f172a;
 }
 body{
@@ -47,6 +47,7 @@ header{
   background:var(--card);
   padding:15px;
   border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
 }
 img{
   width:100%;
@@ -58,6 +59,8 @@ button{
   padding:10px;
   margin:5px;
   cursor:pointer;
+  border:none;
+  border-radius:6px;
 }
 footer{
   text-align:center;
@@ -65,7 +68,16 @@ footer{
   background:#020617;
   margin-top:40px;
 }
-a{color:#38bdf8;}
+a{
+  color:#38bdf8;
+  text-decoration:none;
+}
+a:hover{
+  text-decoration:underline;
+}
+h2{
+  margin-top:40px;
+}
 </style>
 </head>
 
@@ -73,7 +85,7 @@ a{color:#38bdf8;}
 
 <header>
 <h1 id="title">🌐 Notícias Mais Pesquisadas no Mundo</h1>
-<p id="updateDate"></p>
+<p id="updateDate">Atualizado: --/--/----</p>
 <p><span id="visitorText">Visitantes:</span> <span id="visitorCount">0</span></p>
 
 <button onclick="toggleLanguage()">🌍 PT / EN</button>
@@ -100,104 +112,137 @@ const topics = [
 
 let lang = "pt";
 
-// CONTADOR
-async function updateVisitorCount(){
-  try{
-    const response = await fetch(
-      "https://api.countapi.xyz/hit/jmar-tech-news-site/visits"
-    );
+/* CONTADOR DE VISITAS */
+async function updateVisitorCount() {
+  const el = document.getElementById("visitorCount");
 
-    const data = await response.json();
+  try {
+    const res = await fetch("https://api.countapi.xyz/hit/jmar-tech-news-site/visits");
 
-    document.getElementById("visitorCount").innerText =
-      data.value || 0;
+    if (!res.ok) throw new Error("Erro contador");
 
-  }catch(error){
-    console.error(error);
-    document.getElementById("visitorCount").innerText = "0";
+    const data = await res.json();
+
+    el.textContent = typeof data.value === "number" ? data.value : 0;
+
+  } catch (err) {
+    console.error("Contador falhou:", err);
+    el.textContent = 0;
   }
 }
 
-function toggleLanguage(){
+/* IDIOMA */
+function toggleLanguage() {
   lang = lang === "pt" ? "en" : "pt";
 
-  document.getElementById("title").innerText =
+  document.getElementById("title").textContent =
     lang === "pt"
       ? "🌐 Notícias Mais Pesquisadas no Mundo"
       : "🌐 Most Searched News in the World";
 
-  document.getElementById("visitorText").innerText =
+  document.getElementById("visitorText").textContent =
     lang === "pt" ? "Visitantes:" : "Visitors:";
 
   loadAllNews();
 }
 
-function toggleTheme(){
+/* TEMA */
+function toggleTheme() {
   document.body.classList.toggle("light");
 }
 
-async function loadAllNews(){
+/* NOTÍCIAS */
+async function loadAllNews() {
   const container = document.getElementById("newsContainer");
   container.innerHTML = "";
 
-  for(const topic of topics){
-    try{
+  for (const topic of topics) {
+    try {
       const res = await fetch(
         "https://api.spaceflightnewsapi.net/v4/articles/?search=" +
         encodeURIComponent(topic.search)
       );
 
+      if (!res.ok) continue;
+
       const data = await res.json();
 
-      if(!data.results || !data.results.length) continue;
+      if (!data.results || !Array.isArray(data.results)) continue;
 
-      let section = `
+      let html = `
         <h2>${lang === "pt" ? topic.pt : topic.en}</h2>
         <div class="grid">
       `;
 
-      data.results.slice(0,2).forEach(article=>{
+      data.results.slice(0, 2).forEach(article => {
         const resumo = article.summary
-          ? article.summary.substring(0,180) + "..."
+          ? article.summary.substring(0, 180) + "..."
           : "";
 
-        section += `
+        html += `
           <div class="card">
-            <img src="${article.image_url || ''}"
-                 alt="${article.title}"
-                 loading="lazy"
-                 onerror="this.style.display='none'">
-            <h3>${article.title}</h3>
+            <img
+              src="${article.image_url || ''}"
+              alt="${article.title || ''}"
+              loading="lazy"
+              onerror="this.style.display='none'">
+
+            <h3>${article.title || 'Sem título'}</h3>
             <p>${resumo}</p>
-            <a href="${article.url}" target="_blank" rel="noopener noreferrer">
+
+            <a href="${article.url || '#'}"
+               target="_blank"
+               rel="noopener noreferrer">
               Read more
             </a>
           </div>
         `;
       });
 
-      section += "</div>";
-      container.innerHTML += section;
+      html += "</div>";
+      container.innerHTML += html;
 
-    }catch(error){
-      console.error(error);
+    } catch (err) {
+      console.error("Erro notícias:", err);
     }
   }
 
-  document.getElementById("updateDate").innerText =
+  document.getElementById("updateDate").textContent =
     (lang === "pt" ? "Atualizado: " : "Updated: ") +
     new Date().toLocaleDateString();
 }
 
+/* INICIALIZAÇÃO */
 updateVisitorCount();
 loadAllNews();
 
+/* Atualização diária */
 setInterval(loadAllNews, 86400000);
 </script>
 
 </body>
 </html>
 ```
+
+
+
+
+
+
+
+
+
+
+  
+
+
+     
+     
+        
+         
+
+     
+
 
 
 

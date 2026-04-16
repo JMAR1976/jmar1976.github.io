@@ -1,11 +1,12 @@
-```html id="7pw3ka"
+```html id="w4n8qc"
 <!DOCTYPE html>
 <html lang="pt">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="google-site-verification" content="VmGN_6lB30wphsQ4v-vTdsv3Wyax4XMeylYzYD5EHHQ" />
-<title>Notícias Mais Pesquisadas</title>
+<meta name="google-site-verification" content="VmGN_6lB30wphsQ4v-vTdsv3Wyax4XMeylYzYD5EHHQ">
+<meta name="description" content="As notícias mais pesquisadas do mundo em tecnologia, ciência, medicina e inovação.">
+<title>Notícias Mais Pesquisadas no Mundo</title>
 
 <!-- Google AdSense Auto Ads -->
 <script async
@@ -16,7 +17,7 @@ crossorigin="anonymous"></script>
 :root{
   --bg:#0f172a;
   --card:#1e293b;
-  --text:white;
+  --text:#ffffff;
 }
 body.light{
   --bg:#f1f5f9;
@@ -48,15 +49,20 @@ header{
   background:var(--card);
   padding:15px;
   border-radius:10px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.2);
 }
 img{
   width:100%;
   border-radius:10px;
+  object-fit:cover;
+  max-height:200px;
 }
 button{
   padding:10px;
   margin:5px;
   cursor:pointer;
+  border:none;
+  border-radius:6px;
 }
 footer{
   text-align:center;
@@ -64,8 +70,16 @@ footer{
   background:#020617;
   margin-top:40px;
 }
-a{color:#38bdf8;}
-h2{margin-top:40px;}
+a{
+  color:#38bdf8;
+  text-decoration:none;
+}
+a:hover{
+  text-decoration:underline;
+}
+h2{
+  margin-top:40px;
+}
 </style>
 </head>
 
@@ -74,13 +88,15 @@ h2{margin-top:40px;}
 <header>
 <h1 id="title">🌐 Notícias Mais Pesquisadas no Mundo</h1>
 <p id="updateDate"></p>
-<p><span id="visitorText">Visitantes:</span> <span id="visitorCount">...</span></p>
+<p><span id="visitorText">Visitantes:</span> <span id="visitorCount">0</span></p>
 
 <button onclick="toggleLanguage()">🌍 PT / EN</button>
 <button onclick="toggleTheme()">🌙 Tema</button>
 </header>
 
-<div class="container" id="newsContainer"></div>
+<div class="container" id="newsContainer">
+<p>A carregar notícias...</p>
+</div>
 
 <footer>
 <p>Este website funciona como agregador de notícias, mostrando apenas títulos, resumos e links para as fontes oficiais.</p>
@@ -94,32 +110,37 @@ const topics = [
   {pt:"Medicina",en:"Medicine",search:"medicine"},
   {pt:"Ciência",en:"Science",search:"science"},
   {pt:"Espaço",en:"Space",search:"space"},
-  {pt:"Energia",en:"Energy",search:"energy"},
-  {pt:"Robótica",en:"Robotics",search:"robotics"},
-  {pt:"Computação Quântica",en:"Quantum Computing",search:"quantum"},
-  {pt:"Alterações Climáticas",en:"Climate Change",search:"climate"},
-  {pt:"Smartphones",en:"Smartphones",search:"smartphone"},
-  {pt:"Internet",en:"Internet",search:"internet"},
-  {pt:"Cibersegurança",en:"Cybersecurity",search:"cybersecurity"}
+  {pt:"Energia",en:"Energy",search:"energy"}
 ];
 
+// CONTADOR DE VISITAS
 async function updateVisitorCount(){
+  const counter = document.getElementById("visitorCount");
+
   try{
-    const response = await fetch("https://api.countapi.xyz/hit/jmar-tech-news-site/visits");
+    await fetch(
+      "https://api.countapi.xyz/create?namespace=jmar-tech-news-site&key=visits&value=0"
+    );
+
+    const response = await fetch(
+      "https://api.countapi.xyz/hit/jmar-tech-news-site/visits"
+    );
+
+    if(!response.ok) throw new Error();
+
     const data = await response.json();
-    document.getElementById("visitorCount").innerText = data.value;
+    counter.innerText = data.value;
+
   }catch(error){
-    document.getElementById("visitorCount").innerText = "Indisponível";
+    console.error("Erro contador:", error);
+    counter.innerText = "0";
   }
 }
-
-updateVisitorCount();
 
 let lang = "pt";
 
 function toggleLanguage(){
   lang = lang === "pt" ? "en" : "pt";
-  loadAllNews();
 
   document.getElementById("title").innerText =
     lang === "pt"
@@ -128,6 +149,8 @@ function toggleLanguage(){
 
   document.getElementById("visitorText").innerText =
     lang === "pt" ? "Visitantes:" : "Visitors:";
+
+  loadAllNews();
 }
 
 function toggleTheme(){
@@ -145,6 +168,8 @@ async function loadAllNews(){
         encodeURIComponent(topic.search)
       );
 
+      if(!res.ok) throw new Error();
+
       const data = await res.json();
 
       let section = `
@@ -152,23 +177,25 @@ async function loadAllNews(){
         <div class="grid">
       `;
 
-      data.results.slice(0, 2).forEach(a => {
-        const resumo = a.summary
-          ? a.summary.substring(0, 180) + "..."
+      data.results.slice(0,2).forEach(article=>{
+        const resumo = article.summary
+          ? article.summary.substring(0,180) + "..."
           : "";
 
         section += `
           <div class="card">
-            <img src="${a.image_url || ''}"
-                 alt="${a.title}"
+            <img src="${article.image_url || ''}"
+                 alt="${article.title}"
                  loading="lazy"
                  onerror="this.style.display='none'">
 
-            <h3>${a.title}</h3>
+            <h3>${article.title}</h3>
             <p>${resumo}</p>
 
-            <a href="${a.url}" target="_blank" rel="noopener noreferrer">
-              Read more
+            <a href="${article.url}"
+               target="_blank"
+               rel="noopener noreferrer">
+               Read more
             </a>
           </div>
         `;
@@ -177,8 +204,8 @@ async function loadAllNews(){
       section += "</div>";
       container.innerHTML += section;
 
-    }catch(err){
-      console.error("Erro ao carregar notícias:", err);
+    }catch(error){
+      console.error("Erro ao carregar notícias:", error);
     }
   }
 
@@ -187,13 +214,32 @@ async function loadAllNews(){
     new Date().toLocaleDateString();
 }
 
+updateVisitorCount();
 loadAllNews();
+
 setInterval(loadAllNews, 86400000);
 </script>
 
 </body>
 </html>
 ```
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+   
+ 
+
+
 
 
 

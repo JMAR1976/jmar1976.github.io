@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlashNotícias</title>
+
+<meta name="description" content="FlashNotícias - Notícias de Portugal e do mundo em tempo real">
+
+<style>
+body { margin:0; font-family: Arial, sans-serif; background:#eef1f5 }
+
+header {
+  background:#c40000;
+  color:#fff;
+  padding:20px;
+  text-align:center;
+}
+
+.container {
+  max-width:1000px;
+  margin:auto;
+  padding:20px;
+}
+
+.card {
+  background:#fff;
+  padding:15px;
+  margin-bottom:15px;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.2s;
+}
+
+.card:hover { transform:scale(1.02) }
+
+.card img {
+  width:100%;
+  border-radius:6px;
+  margin-bottom:10px;
+}
+
+.error {
+  color:red;
+  text-align:center;
+  margin-top:20px;
+}
+
+.loading {
+  text-align:center;
+  color:#555;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>⚡ FlashNotícias</h1>
+<p>Notícias em tempo real</p>
+</header>
+
+<div class="container" id="app">
+<div class="loading">🔄 A carregar notícias...</div>
+</div>
+
+<script>
+
+// ✅ BACKEND (JÁ CONFIGURADO — ALTERA SE NECESSÁRIO)
+const API_URL = "https://flashnoticias.onrender.com/api/news";
+
+// abrir notícia
+function abrir(url){
+  if(url && url !== "#"){
+    window.open(url, "_blank", "noopener");
+  }
+}
+
+// criar card seguro
+function criarCard(noticia){
+  const titulo = noticia.title || "Sem título";
+  const descricao = noticia.description || "";
+  const imagem = noticia.urlToImage || "";
+  const link = noticia.url || "#";
+
+  return `
+    <div class="card" onclick="abrir('${link}')">
+      ${imagem ? `<img src="${imagem}" alt="imagem">` : ""}
+      <h2>${titulo}</h2>
+      <p>${descricao}</p>
+    </div>
+  `;
+}
+
+// carregar notícias
+async function loadNews(){
+
+  const container = document.getElementById("app");
+
+  try {
+
+    const response = await fetch(API_URL, { cache: "no-store" });
+
+    if(!response.ok){
+      throw new Error("Erro HTTP: " + response.status);
+    }
+
+    const data = await response.json();
+
+    if(!data || !data.articles || data.articles.length === 0){
+      throw new Error("Sem dados");
+    }
+
+    container.innerHTML = "";
+
+    data.articles.slice(0,10).forEach(noticia => {
+      container.innerHTML += criarCard(noticia);
+    });
+
+  } catch(error) {
+
+    console.error("Erro:", error);
+
+    container.innerHTML = `
+      <div class="error">
+        ⚠️ Não foi possível carregar as notícias.<br>
+        Verifica se o backend no Render está ativo.
+      </div>
+    `;
+  }
+}
+
+// iniciar
+loadNews();
+
+</script>
+
+</body>
+</html>

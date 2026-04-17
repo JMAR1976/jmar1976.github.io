@@ -4,32 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>FlashNotícias | Últimas notícias</title>
-
-<meta name="description" content="Notícias de Portugal e do mundo em tempo real">
+<title>FlashNotícias</title>
 
 <style>
 body { margin:0; font-family: Arial; background:#eef1f5 }
-
-header {
-  background:#c40000;
-  color:#fff;
-  padding:20px;
-  text-align:center;
-}
-
-.container {
-  max-width:1000px;
-  margin:auto;
-  padding:20px;
-}
-
-.destaque {
-  background:#ffcc00;
-  padding:10px;
-  margin-bottom:15px;
-  font-weight:bold;
-}
+header { background:#c40000; color:#fff; padding:20px; text-align:center }
+.container { max-width:1000px; margin:auto; padding:20px }
 
 .card {
   background:#fff;
@@ -44,16 +24,13 @@ header {
   height:200px;
   object-fit:cover;
   border-radius:6px;
-  margin-bottom:10px;
 }
 
-.card h2 {
-  font-size:18px;
-}
-
-.erro {
-  color:red;
-  text-align:center;
+.destaque {
+  background:#ffcc00;
+  padding:10px;
+  margin-bottom:15px;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -62,29 +39,23 @@ header {
 
 <header>
 <h1>⚡ FlashNotícias</h1>
-<p>Notícias em tempo real</p>
 </header>
 
-<div class="container">
-<div id="app">🔄 A carregar notícias...</div>
+<div class="container" id="app">
+🔄 A carregar notícias...
 </div>
 
 <script>
 
-const API_URL = "https://gnews.io/api/v4/top-headlines?lang=pt&max=10&token=demo";
+// 🔥 API PRINCIPAL
+const API1 = "https://gnews.io/api/v4/top-headlines?lang=pt&max=10&token=demo";
 
-// abrir notícia
+// 🔥 API BACKUP (SEM KEY)
+const API2 = "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/rss.xml";
+
+// abrir
 function abrir(url){
-  if(typeof url === "string" && url.startsWith("http")){
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
-
-// título viral
-function tituloViral(t){
-  if(!t) return "Notícia importante";
-  if(t.toLowerCase().includes("última hora")) return t;
-  return "🔴 ÚLTIMA HORA: " + t;
+  if(url) window.open(url, "_blank");
 }
 
 // criar card
@@ -92,58 +63,57 @@ function criarCard(n){
 
   const card = document.createElement("div");
   card.className = "card";
-
-  if(n.url){
-    card.onclick = () => abrir(n.url);
-  }
+  card.onclick = () => abrir(n.url);
 
   const img = document.createElement("img");
-
-  if(n.image && typeof n.image === "string" && n.image.startsWith("http")){
-    img.src = n.image;
-  } else {
-    img.src = "https://via.placeholder.com/800x400?text=Sem+Imagem";
-  }
-
-  img.onerror = () => {
-    img.onerror = null;
-    img.src = "https://via.placeholder.com/800x400?text=Imagem+Indisponível";
-  };
+  img.src = n.image || n.thumbnail || "https://via.placeholder.com/800x400?text=Noticia";
+  img.onerror = () => img.remove();
 
   const h2 = document.createElement("h2");
-  h2.textContent = tituloViral(n.title).slice(0,120);
-
-  const p = document.createElement("p");
-  p.textContent = n.description || "Sem descrição disponível";
+  h2.textContent = n.title;
 
   card.appendChild(img);
   card.appendChild(h2);
-  card.appendChild(p);
 
   return card;
 }
 
-// carregar notícias
+// carregar GNews
+async function carregarGNews(){
+  const res = await fetch(API1);
+  const data = await res.json();
+  return data.articles;
+}
+
+// carregar RSS
+async function carregarRSS(){
+  const res = await fetch(API2);
+  const data = await res.json();
+
+  return data.items.map(i => ({
+    title: i.title,
+    url: i.link,
+    image: i.thumbnail
+  }));
+}
+
+// principal
 async function loadNews(){
 
   const container = document.getElementById("app");
 
   try {
 
-    const res = await fetch(API_URL);
+    let artigos = [];
 
-    if(!res.ok){
-      throw new Error("Erro HTTP");
+    try {
+      artigos = await carregarGNews();
+    } catch {
+      artigos = [];
     }
 
-    const data = await res.json();
-
-    const artigos = Array.isArray(data.articles)
-      ? data.articles.filter(n => n && n.title)
-      : [];
-
-    if(artigos.length === 0){
-      throw new Error("Sem notícias");
+    if(!artigos || artigos.length === 0){
+      artigos = await carregarRSS();
     }
 
     container.innerHTML = "";
@@ -151,34 +121,39 @@ async function loadNews(){
     // destaque
     const destaque = document.createElement("div");
     destaque.className = "destaque";
-    destaque.textContent = tituloViral(artigos[0].title);
+    destaque.textContent = artigos[0]?.title || "Notícia";
     container.appendChild(destaque);
 
-    // lista
-    artigos.forEach(n=>{
+    artigos.slice(0,10).forEach(n=>{
       container.appendChild(criarCard(n));
     });
 
   } catch(e){
-
-    console.error(e);
-
-    container.innerHTML = `
-      <div class="erro">
-        ⚠️ Não foi possível carregar notícias.<br>
-        Tenta novamente mais tarde.
-      </div>
-    `;
+    container.innerHTML = "Erro ao carregar notícias";
   }
 }
 
-// iniciar
-document.addEventListener("DOMContentLoaded", loadNews);
+loadNews();
 
 </script>
 
 </body>
 </html>
+ 
+
+
+
+
+ 
+
+  
+  
+    
+
+  
+   
+
+
 
 
 

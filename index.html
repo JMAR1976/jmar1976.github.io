@@ -65,6 +65,11 @@ header {
   margin-bottom:10px;
 }
 
+.erro {
+  text-align:center;
+  color:red;
+}
+
 @media(max-width:768px){
   .grid { grid-template-columns:1fr }
 }
@@ -75,13 +80,14 @@ header {
 
 <header>
 <h1>⚡ FlashNotícias</h1>
-<p>Últimas notícias de Portugal e do mundo</p>
+<p>Últimas notícias do mundo</p>
 </header>
 
 <div class="container">
 
 <div class="grid">
 <div id="hero"></div>
+
 <div class="sidebar">
 <h3>📰 Últimas</h3>
 <div id="sidebar"></div>
@@ -94,17 +100,21 @@ header {
 
 <script>
 
-const RSS_URL = "https://api.allorigins.win/get?url=" +
-encodeURIComponent("https://feeds.bbci.co.uk/news/rss.xml");
+// ✅ RSS estável (sem XML / sem proxy problemático)
+const RSS_URL = "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/rss.xml";
 
 function abrir(url){
-  if(url) window.open(url, "_blank", "noopener,noreferrer");
+  if(url && url.startsWith("http")){
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 }
 
-function extrairImagem(desc){
-  if(!desc) return "https://via.placeholder.com/800x400";
-  const match = desc.match(/<img.*?src="(.*?)"/);
-  return match ? match[1] : "https://via.placeholder.com/800x400";
+// imagem segura
+function getImagem(item){
+  if(item.thumbnail) return item.thumbnail;
+
+  const match = item.description?.match(/<img.*?src="(.*?)"/);
+  return match ? match[1] : "https://via.placeholder.com/800x400?text=Noticia";
 }
 
 async function loadNews(){
@@ -123,13 +133,10 @@ async function loadNews(){
 
     const data = await res.json();
 
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(data.contents, "text/xml");
+    const artigos = Array.isArray(data.items) ? data.items : [];
 
-    const items = xml.querySelectorAll("item");
-
-    if(items.length === 0){
-      throw new Error("Sem dados");
+    if(artigos.length === 0){
+      throw new Error("Sem notícias");
     }
 
     // limpar
@@ -137,66 +144,68 @@ async function loadNews(){
     sidebar.innerHTML = "";
     news.innerHTML = "";
 
-    const artigos = [];
-
-    items.forEach(item=>{
-      artigos.push({
-        title: item.querySelector("title")?.textContent || "",
-        link: item.querySelector("link")?.textContent || "",
-        desc: item.querySelector("description")?.textContent || ""
-      });
-    });
-
     // HERO
     const first = artigos[0];
 
-    const heroDiv = document.createElement("div");
-    heroDiv.className = "hero";
-    heroDiv.onclick = () => abrir(first.link);
-
-    heroDiv.innerHTML = `
-      <img src="${extrairImagem(first.desc)}" onerror="this.remove()">
-      <h2>🔴 ${first.title}</h2>
+    hero.innerHTML = `
+      <div class="hero" onclick="abrir('${first.link}')">
+        <img src="${getImagem(first)}" onerror="this.remove()">
+        <h2>🔴 ${first.title}</h2>
+      </div>
     `;
-
-    hero.appendChild(heroDiv);
 
     // SIDEBAR
     artigos.slice(1,6).forEach(n=>{
-      const div = document.createElement("div");
-      div.className = "side-item";
-      div.textContent = n.title;
-      div.onclick = () => abrir(n.link);
-      sidebar.appendChild(div);
+      sidebar.innerHTML += `
+        <div class="side-item" onclick="abrir('${n.link}')">
+          ${n.title}
+        </div>
+      `;
     });
 
     // RESTO
     artigos.slice(6,15).forEach(n=>{
-      const card = document.createElement("div");
-      card.className = "card";
-      card.onclick = () => abrir(n.link);
-
-      card.innerHTML = `
-        <img src="${extrairImagem(n.desc)}" onerror="this.remove()">
-        <h2>${n.title}</h2>
+      news.innerHTML += `
+        <div class="card" onclick="abrir('${n.link}')">
+          <img src="${getImagem(n)}" onerror="this.remove()">
+          <h2>${n.title}</h2>
+        </div>
       `;
-
-      news.appendChild(card);
     });
 
   } catch(e){
+
     console.error(e);
-    document.getElementById("news").innerHTML = "⚠️ Erro ao carregar notícias";
+
+    document.getElementById("news").innerHTML = `
+      <div class="erro">
+        ⚠️ Não foi possível carregar notícias.<br>
+        Verifica a ligação à internet.
+      </div>
+    `;
   }
 }
 
+// iniciar
 document.addEventListener("DOMContentLoaded", loadNews);
 
 </script>
 
 </body>
 </html>
+ 
 
+
+ 
+
+
+ 
+
+   
+   
+   
+    
+    
 
 
 

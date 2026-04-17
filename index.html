@@ -1,199 +1,20 @@
-<!DOCTYPE html>
-<html lang="pt">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>FlashNotícias | Jornal Online</title>
 
-<style>
-body { margin:0; font-family: Arial; background:#f4f4f4 }
 
-header {
-  background:#c40000;
-  color:#fff;
-  padding:20px;
-  text-align:center;
-}
 
-.container {
-  max-width:1200px;
-  margin:auto;
-  padding:20px;
-}
 
-.grid {
-  display:grid;
-  grid-template-columns:2fr 1fr;
-  gap:20px;
-}
 
-.hero, .sidebar, .card {
-  background:#fff;
-  border-radius:8px;
-  overflow:hidden;
-}
 
-.hero img {
-  width:100%;
-  height:300px;
-  object-fit:cover;
-}
 
-.hero h2 { padding:15px }
 
-.sidebar { padding:15px }
 
-.side-item {
-  margin-bottom:10px;
-  border-bottom:1px solid #ddd;
-  padding-bottom:10px;
-  cursor:pointer;
-}
 
-.card {
-  padding:15px;
-  margin-bottom:15px;
-  cursor:pointer;
-}
 
-.card img {
-  width:100%;
-  height:200px;
-  object-fit:cover;
-  border-radius:6px;
-  margin-bottom:10px;
-}
 
-.erro {
-  text-align:center;
-  color:red;
-}
+  
 
-@media(max-width:768px){
-  .grid { grid-template-columns:1fr }
-}
-</style>
-</head>
+  
 
-<body>
-
-<header>
-<h1>⚡ FlashNotícias</h1>
-<p>Últimas notícias do mundo</p>
-</header>
-
-<div class="container">
-
-<div class="grid">
-<div id="hero"></div>
-
-<div class="sidebar">
-<h3>📰 Últimas</h3>
-<div id="sidebar"></div>
-</div>
-</div>
-
-<div id="news"></div>
-
-</div>
-
-<script>
-
-// ✅ RSS estável (sem XML / sem proxy problemático)
-const RSS_URL = "https://api.rss2json.com/v1/api.json?rss_url=https://feeds.bbci.co.uk/news/rss.xml";
-
-function abrir(url){
-  if(url && url.startsWith("http")){
-    window.open(url, "_blank", "noopener,noreferrer");
-  }
-}
-
-// imagem segura
-function getImagem(item){
-  if(item.thumbnail) return item.thumbnail;
-
-  const match = item.description?.match(/<img.*?src="(.*?)"/);
-  return match ? match[1] : "https://via.placeholder.com/800x400?text=Noticia";
-}
-
-async function loadNews(){
-
-  const hero = document.getElementById("hero");
-  const sidebar = document.getElementById("sidebar");
-  const news = document.getElementById("news");
-
-  try {
-
-    const res = await fetch(RSS_URL);
-
-    if(!res.ok){
-      throw new Error("Erro HTTP");
-    }
-
-    const data = await res.json();
-
-    const artigos = Array.isArray(data.items) ? data.items : [];
-
-    if(artigos.length === 0){
-      throw new Error("Sem notícias");
-    }
-
-    // limpar
-    hero.innerHTML = "";
-    sidebar.innerHTML = "";
-    news.innerHTML = "";
-
-    // HERO
-    const first = artigos[0];
-
-    hero.innerHTML = `
-      <div class="hero" onclick="abrir('${first.link}')">
-        <img src="${getImagem(first)}" onerror="this.remove()">
-        <h2>🔴 ${first.title}</h2>
-      </div>
-    `;
-
-    // SIDEBAR
-    artigos.slice(1,6).forEach(n=>{
-      sidebar.innerHTML += `
-        <div class="side-item" onclick="abrir('${n.link}')">
-          ${n.title}
-        </div>
-      `;
-    });
-
-    // RESTO
-    artigos.slice(6,15).forEach(n=>{
-      news.innerHTML += `
-        <div class="card" onclick="abrir('${n.link}')">
-          <img src="${getImagem(n)}" onerror="this.remove()">
-          <h2>${n.title}</h2>
-        </div>
-      `;
-    });
-
-  } catch(e){
-
-    console.error(e);
-
-    document.getElementById("news").innerHTML = `
-      <div class="erro">
-        ⚠️ Não foi possível carregar notícias.<br>
-        Verifica a ligação à internet.
-      </div>
-    `;
-  }
-}
-
-// iniciar
-document.addEventListener("DOMContentLoaded", loadNews);
-
-</script>
-
-</body>
-</html>
- 
 
 
  

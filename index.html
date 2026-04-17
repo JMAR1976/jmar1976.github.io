@@ -3,12 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FlashNotícias</title>
 
-<meta name="description" content="FlashNotícias - Notícias de Portugal e do mundo em tempo real">
+<title>FlashNotícias | Últimas notícias virais</title>
+
+<meta name="description" content="Últimas notícias de Portugal e do mundo com maior impacto e atualidade">
 
 <style>
-body { margin:0; font-family: Arial, sans-serif; background:#eef1f5 }
+body { margin:0; font-family: Arial; background:#eef1f5 }
 
 header {
   background:#c40000;
@@ -23,33 +24,38 @@ header {
   padding:20px;
 }
 
+.stats {
+  background:#fff;
+  padding:10px;
+  margin-bottom:15px;
+  border-radius:8px;
+  text-align:center;
+}
+
+.destaque {
+  background:#ffcc00;
+  padding:12px;
+  margin-bottom:15px;
+  font-weight:bold;
+}
+
 .card {
   background:#fff;
   padding:15px;
   margin-bottom:15px;
   border-radius:8px;
   cursor:pointer;
-  transition:0.2s;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
 }
-
-.card:hover { transform:scale(1.02) }
 
 .card img {
   width:100%;
+  height:200px;
+  object-fit:cover;
   border-radius:6px;
   margin-bottom:10px;
 }
 
-.error {
-  color:red;
-  text-align:center;
-  margin-top:20px;
-}
-
-.loading {
-  text-align:center;
-  color:#555;
-}
 </style>
 </head>
 
@@ -57,39 +63,104 @@ header {
 
 <header>
 <h1>⚡ FlashNotícias</h1>
-<p>Notícias em tempo real</p>
+<p>Notícias mais relevantes e virais</p>
 </header>
 
-<div class="container" id="app">
-<div class="loading">🔄 A carregar notícias...</div>
+<div class="container">
+<div class="stats" id="stats"></div>
+<div id="app">🔄 A carregar notícias...</div>
 </div>
 
 <script>
 
-// ✅ BACKEND (JÁ CONFIGURADO — ALTERA SE NECESSÁRIO)
-const API_URL = "https://flashnoticias.onrender.com/api/news";
+const API_URL = "https://newsapi.org/v2/top-headlines?country=pt&apiKey=2d89f5a76883471f94d8f753c5794413";
+
+// visitas
+let visitas = Number(localStorage.getItem("visitas") || 0);
+visitas++;
+localStorage.setItem("visitas", visitas);
+
+// ganhos
+let ganhoTotal = Number(localStorage.getItem("ganhoTotal") || 0);
+
+// stats
+function atualizarStats(){
+  document.getElementById("stats").textContent =
+    `👁️ ${visitas} visitas | 💰 ${ganhoTotal.toFixed(2)}€`;
+}
+
+// slug seguro
+function slug(t){
+  return (t || "id").toLowerCase().replace(/[^a-z0-9]+/g,'-');
+}
+
+// clique
+function registarClique(n){
+  const id = slug(n.title);
+
+  let clicks = Number(localStorage.getItem("click_"+id) || 0);
+  clicks++;
+  localStorage.setItem("click_"+id, clicks);
+
+  ganhoTotal += 0.03;
+  localStorage.setItem("ganhoTotal", ganhoTotal);
+
+  atualizarStats();
+}
 
 // abrir notícia
-function abrir(url){
-  if(url && url !== "#"){
-    window.open(url, "_blank", "noopener");
+function abrir(n){
+  if(n && n.url){
+    registarClique(n);
+    window.open(n.url, "_blank", "noopener,noreferrer");
   }
 }
 
-// criar card seguro
-function criarCard(noticia){
-  const titulo = noticia.title || "Sem título";
-  const descricao = noticia.description || "";
-  const imagem = noticia.urlToImage || "";
-  const link = noticia.url || "#";
+// título viral
+function tituloViral(t){
+  if(!t) return "Notícia importante";
+  if(t.toLowerCase().includes("última hora")) return t;
+  return "🔴 ÚLTIMA HORA: " + t;
+}
 
-  return `
-    <div class="card" onclick="abrir('${link}')">
-      ${imagem ? `<img src="${imagem}" alt="imagem">` : ""}
-      <h2>${titulo}</h2>
-      <p>${descricao}</p>
-    </div>
-  `;
+// score
+function score(n){
+  let s = 0;
+  const t = (n.title || "").toLowerCase();
+
+  ["morte","crise","guerra","acidente","urgente"].forEach(p=>{
+    if(t.includes(p)) s+=3;
+  });
+
+  if(n.urlToImage) s+=2;
+
+  return s;
+}
+
+// criar card
+function criarCard(n){
+
+  const card = document.createElement("div");
+  card.className = "card";
+  card.onclick = () => abrir(n);
+
+  if(n.urlToImage){
+    const img = document.createElement("img");
+    img.src = n.urlToImage;
+    img.onerror = () => img.remove();
+    card.appendChild(img);
+  }
+
+  const h2 = document.createElement("h2");
+  h2.textContent = tituloViral(n.title);
+
+  const p = document.createElement("p");
+  p.textContent = n.description || "Sem descrição disponível";
+
+  card.appendChild(h2);
+  card.appendChild(p);
+
+  return card;
 }
 
 // carregar notícias
@@ -99,41 +170,57 @@ async function loadNews(){
 
   try {
 
-    const response = await fetch(API_URL, { cache: "no-store" });
+    const res = await fetch(API_URL);
 
-    if(!response.ok){
-      throw new Error("Erro HTTP: " + response.status);
+    if(!res.ok){
+      throw new Error("Erro HTTP");
     }
 
-    const data = await response.json();
+    const data = await res.json();
 
-    if(!data || !data.articles || data.articles.length === 0){
-      throw new Error("Sem dados");
+    if(!data || !Array.isArray(data.articles)){
+      throw new Error("Dados inválidos");
     }
+
+    let artigos = data.articles.filter(n => n && n.title);
+
+    if(artigos.length === 0){
+      throw new Error("Sem notícias");
+    }
+
+    artigos.sort((a,b)=>score(b)-score(a));
 
     container.innerHTML = "";
 
-    data.articles.slice(0,10).forEach(noticia => {
-      container.innerHTML += criarCard(noticia);
+    const destaque = document.createElement("div");
+    destaque.className = "destaque";
+    destaque.textContent = tituloViral(artigos[0].title || "Sem destaque");
+    container.appendChild(destaque);
+
+    artigos.slice(0,10).forEach(n=>{
+      container.appendChild(criarCard(n));
     });
 
-  } catch(error) {
-
-    console.error("Erro:", error);
-
-    container.innerHTML = `
-      <div class="error">
-        ⚠️ Não foi possível carregar as notícias.<br>
-        Verifica se o backend no Render está ativo.
-      </div>
-    `;
+  } catch(e){
+    container.textContent = "⚠️ Erro ao carregar notícias";
+    console.error(e);
   }
 }
 
 // iniciar
-loadNews();
+document.addEventListener("DOMContentLoaded", ()=>{
+  atualizarStats();
+  loadNews();
+});
 
 </script>
 
 </body>
 </html>
+
+
+
+
+  
+
+  
